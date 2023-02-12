@@ -1,7 +1,7 @@
 # Create VPC network
 resource "google_compute_network" "vpc-network" {
   project = google_project.data-lake.project_id
-  name = "vpc-network-eva"
+  name = "vpc-network"
   depends_on = [google_project_service.data-lake-service]
 }
 
@@ -16,7 +16,7 @@ resource "google_compute_address" "orchestration-ip-static" {
 # Create orchestration instance
 resource "google_compute_instance" "orchestration" {
   project      = google_project.data-lake.project_id
-  zone         = "${local.region}-b"
+  zone         = "${local.region}-a"
   name         = "orchestration"
   machine_type = "e2-micro"
 
@@ -28,8 +28,29 @@ resource "google_compute_instance" "orchestration" {
   network_interface {
     network = google_compute_network.vpc-network.name
     access_config {
-        nat_ip = google_compute_address.orchestration-ip-static.address
+      nat_ip = google_compute_address.orchestration-ip-static.address
     }
+    
   }
-  depends_on = [google_project_service.data-lake-service, google_compute_address.orchestration-ip-static, google_compute_network.vpc-network]
+
+  depends_on = [
+    google_project_service.data-lake-service,
+    google_compute_address.orchestration-ip-static,
+    google_compute_network.vpc-network
+  ]
+}
+
+# Create firewall rule allowing TCP traffic on port 22
+resource "google_compute_firewall" "allow-ssh" {
+  name    = "allow-ssh"
+  network = google_compute_network.vpc-network.name
+  project = google_project.data-lake.project_id
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+
+  depends_on = [google_compute_network.vpc-network]
 }

@@ -22,7 +22,8 @@ resource "google_compute_instance" "orchestration" {
 
   boot_disk {
     initialize_params {
-      image = "ubuntu-2004-focal-v20200701"
+      image = "ubuntu-os-cloud/ubuntu-2004-lts"
+      size = 100
     }
   }
   network_interface {
@@ -32,6 +33,18 @@ resource "google_compute_instance" "orchestration" {
     }
     
   }
+
+  metadata_startup_script = <<-EOF
+    #!/bin/bash
+    sudo su
+    apt-get update
+    apt-get install -y gnupg2 software-properties-common
+    apt-get update
+    apt-get install -y r-base
+    apt-get install -y libssl-dev libcurl4-openssl-dev libxml2-dev tesseract-ocr imagemagick
+    su - ubuntu -c "R -e 'install.packages(\"remotes\")'"
+    su - ubuntu -c "R -e 'remotes::install_version(\"rvest\", \"1.0.3\")'"
+  EOF
 
   depends_on = [
     google_project_service.data-lake-service,

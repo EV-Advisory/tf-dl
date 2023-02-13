@@ -19,7 +19,7 @@ resource "google_compute_instance" "orchestration" {
   zone         = "${local.region}-a"  # GCP zone
   name         = "orchestration"  # Name of the GCE instance
   machine_type = "e2-micro"  # Machine type to use for the instance
-
+   allow_stopping_for_update = true
   boot_disk {
     initialize_params {
       image = "ubuntu-os-cloud/ubuntu-2004-lts"  # Boot disk image
@@ -41,10 +41,27 @@ resource "google_compute_instance" "orchestration" {
     apt-get install -y gnupg2 software-properties-common  # Install required packages
     apt-get update  # Update package lists again
     apt-get install -y r-base  # Install R programming language
-    apt-get install -y libssl-dev libcurl4-openssl-dev libxml2-dev tesseract-ocr imagemagick  # Install dependencies for rvest
+    apt-get install -y libssl-dev libcurl4-openssl-dev libxml2-dev tesseract-ocr imagemagick pandoc pandoc-citeproc pandoc-data  # Install dependencies for rvest
     su - ubuntu -c "R -e 'install.packages(\"remotes\")'"  # Install remotes package
     su - ubuntu -c "R -e 'remotes::install_version(\"rvest\", \"1.0.3\")'"  # Install rvest package
+    su - ubuntu -c "R -e 'install.packages(c(\"sessioninfo\",\"jsonlite\",\"purrr\",\"dplyr\",\"here\",\"DT\",\"apexcharter\"))'"
   EOF
+
+#  metadata = {
+#    "start-time" = "00 14 * * *"  # 9am EST is 14:00 UTC
+#    "stop-time" = "00 15 * * *"  # 10am EST is 15:00 UTC
+#  }
+
+#  scheduling {
+#    preemptible = false
+#    on_host_maintenance = "MIGRATE"
+#    automatic_restart = true
+#    node_affinities {
+#      key = "name"
+#      operator = "IN"
+#      values = ["orchestration"]
+#    }
+#   }
 
   depends_on = [
     google_project_service.data-lake-service,
